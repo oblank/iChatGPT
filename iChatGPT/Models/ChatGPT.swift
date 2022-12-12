@@ -31,6 +31,14 @@ class Chatbot {
             await refreshSession()
         }
 	}
+    
+    private func getCookies(key: String) -> String {
+        guard openAiCookies != nil else {
+            return ""
+        }
+        print(openAiCookies?.cookiesString ?? "")
+        return openAiCookies?.cookies[key]?.value ?? ""
+    }
 	
 	private func headers() -> [String: String] {
 		return [
@@ -38,7 +46,7 @@ class Chatbot {
 			"Accept": "text/event-stream",
 			"Authorization": "Bearer \(self.authorization)",
 			"Content-Type": "application/json",
-			"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15",
+			"User-Agent": openAiCookies?.UA ?? "",
 			"X-Openai-Assistant-App-Id": "",
 			"Connection": "keep-alive",
 			"Accept-Language": "zh-CN,zh-Hans;en-US,en;q=0.9",
@@ -70,13 +78,18 @@ class Chatbot {
     }
 	
 	func refreshSession(retry: Int = 1) async {
-		let cookies = "\(sessionTokenKey)=\(self.sessionToken)"
+        guard openAiCookies != nil else {
+            print("请先登录，授权已过期")
+            return;
+        }
+        let cookies = openAiCookies?.cookiesString //"\(sessionTokenKey)=\(self.sessionToken)"
 		let url = self.apUrl + "api/auth/session"
-		let userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15"
+		let userAgent = openAiCookies?.UA ?? ""
 		var request = URLRequest(url: URL(string: url)!)
 		request.httpMethod = "GET"
-		request.addValue(userAgent, forHTTPHeaderField: "User-Agent")
-		request.addValue(cookies, forHTTPHeaderField: "Cookie")
+        request.addValue(userAgent, forHTTPHeaderField: "User-Agent")
+		request.addValue("https://chat.openai.com/chat", forHTTPHeaderField: "Referer")
+        request.addValue(openAiCookies?.cookiesString ?? "", forHTTPHeaderField: "Cookie")
 		do {
 			let (data, response) = try await URLSession.shared.data(for: request)
 			let json = try JSONSerialization.jsonObject(with: data, options: [])
@@ -110,6 +123,8 @@ class Chatbot {
 	}
 	
     func getChatResponse(prompt: String, retry: Int = 1) async -> String {
+        sessionToken = self.getCookies(key: sessionTokenKey)
+        
 		if self.authorization.isEmpty {
 			await refreshSession()
 		}

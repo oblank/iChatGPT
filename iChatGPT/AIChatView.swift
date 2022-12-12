@@ -8,16 +8,61 @@
 
 import SwiftUI
 import MarkdownText
+import WebKit
+import SwiftyJSON
+
+struct SiteCookies {
+    var UA: String
+    var cookiesString: String
+    var cookies: [String: HTTPCookie]
+}
+
+var openAiCookies: SiteCookies? = nil
+
 
 struct AIChatView: View {
     
     @State private var isAddPresented: Bool = false
     @State private var searchText = ""
     @StateObject private var chatModel = AIChatModel(contents: [])
+    @ObservedObject public var webViewStateModel: WebViewStateModel = WebViewStateModel()
+    
+    // 接受js的请求并打开相应页面
+    private class TagsJavaScriptCallHandler: NSObject, WKScriptMessageHandler {
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            print("JS发送到IOS的数据====\(message.body), name=\(message.name)")
+            let jsonString = "\(message.body)"
+            if let dataFromString = jsonString.data(using: .utf8, allowLossyConversion: true) {
+                if let json = try? JSON(data: dataFromString) {
+                    print(json)
+                    //showTagLogsList(type: .tag, tagStr: "\(json["params"]["tag"].stringValue)", count: Int32(json["params"]["count"].intValue))
+                }
+            }
+        }
+    }
     
     var body: some View {
         NavigationView {
             Group {
+                WebView(
+                    url: URL(string: "https://chat.openai.com/chat")!,
+                    webViewStateModel: webViewStateModel
+                )
+                .frame(height: isAddPresented ? UIScreen.main.bounds.height - 40 : 0)
+                .onChange(of: webViewStateModel.webview?.configuration.websiteDataStore.httpCookieStore) { _ in
+                    webViewStateModel.webview?.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in
+                        var cookieStr = ""
+                        var cookieItems: [String: HTTPCookie] = [:]
+                        for cookie in cookies {
+                            print(cookie.name, cookie.value, cookie.domain)
+                            cookieStr += "\(cookie.name)=\(cookie.value); "
+                            cookieItems[cookie.name] = cookie
+                        }
+                        openAiCookies = SiteCookies(UA: WKWebView().value(forKey: "userAgent") as! String, cookiesString: cookieStr, cookies: cookieItems)
+                    }
+                }
+                
+                
                 List {
                     ForEach(chatModel.contents, id: \.datetime) { item in
                         Section(header: Text(item.datetime)) {
@@ -65,9 +110,9 @@ struct AIChatView: View {
                 HStack {
                     addButton
             })
-            .sheet(isPresented: $isAddPresented, content: {
-                TokenSettingView(isAddPresented: $isAddPresented, chatModel: chatModel)
-            })
+//            .sheet(isPresented: $isAddPresented, content: {
+//                TokenSettingView(isAddPresented: $isAddPresented, chatModel: chatModel)
+//            })
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     HStack {
@@ -83,13 +128,18 @@ struct AIChatView: View {
     
     private var addButton: some View {
         Button(action: {
-            isAddPresented = true
+            isAddPresented.toggle()
         }) {
             HStack {
-                if #available(iOS 15.4, *) {
-                    Image(systemName: "key.viewfinder").imageScale(.large)
+                if isAddPresented {
+                    Text("完成")
+                        .fontWeight(.semibold)
                 } else {
-                    Image(systemName: "key.icloud").imageScale(.large)
+                    if #available(iOS 15.4, *) {
+                        Image(systemName: "key.viewfinder").imageScale(.large)
+                    } else {
+                        Image(systemName: "key.icloud").imageScale(.large)
+                    }
                 }
             }.frame(height: 40)
         }
