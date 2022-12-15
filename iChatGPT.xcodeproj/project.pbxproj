@@ -25,6 +25,7 @@
 		6DC88B142942C8E000DA6C55 /* Strings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC88B132942C8E000DA6C55 /* Strings.swift */; };
 		6DC88B192942D0B700DA6C55 /* Dates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC88B182942D0B700DA6C55 /* Dates.swift */; };
 		6DC88B1B2942E84A00DA6C55 /* MultilineTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC88B1A2942E84A00DA6C55 /* MultilineTextField.swift */; };
+		C61F49C8294AFC690054AAF7 /* LDSwiftEventSource in Frameworks */ = {isa = PBXBuildFile; productRef = C61F49C7294AFC690054AAF7 /* LDSwiftEventSource */; };
 		C6F6CD48294703B30040B6AB /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6F6CD47294703B30040B6AB /* WebView.swift */; };
 		C6F6CD4B294705740040B6AB /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = C6F6CD4A294705740040B6AB /* SwiftyJSON */; };
 /* End PBXBuildFile section */
@@ -79,6 +80,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C6F6CD4B294705740040B6AB /* SwiftyJSON in Frameworks */,
+				C61F49C8294AFC690054AAF7 /* LDSwiftEventSource in Frameworks */,
 				6DAA91802943448D004ACD01 /* MarkdownText in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -205,6 +207,7 @@
 			packageProductDependencies = (
 				6DAA917F2943448D004ACD01 /* MarkdownText */,
 				C6F6CD4A294705740040B6AB /* SwiftyJSON */,
+				C61F49C7294AFC690054AAF7 /* LDSwiftEventSource */,
 			);
 			productName = iChatGPT;
 			productReference = 6DC88ADA2942C8AD00DA6C55 /* iChatGPT.app */;
@@ -283,6 +286,7 @@
 			packageReferences = (
 				6DAA917E2943448D004ACD01 /* XCRemoteSwiftPackageReference "MarkdownText" */,
 				C6F6CD49294705740040B6AB /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
+				C61F49C6294AFC690054AAF7 /* XCRemoteSwiftPackageReference "swift-eventsource" */,
 			);
 			productRefGroup = 6DC88ADB2942C8AD00DA6C55 /* Products */;
 			projectDirPath = "";
@@ -691,6 +695,14 @@
 				minimumVersion = 1.0.0;
 			};
 		};
+		C61F49C6294AFC690054AAF7 /* XCRemoteSwiftPackageReference "swift-eventsource" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/launchdarkly/swift-eventsource";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.0;
+			};
+		};
 		C6F6CD49294705740040B6AB /* XCRemoteSwiftPackageReference "SwiftyJSON" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SwiftyJSON/SwiftyJSON";
@@ -706,6 +718,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6DAA917E2943448D004ACD01 /* XCRemoteSwiftPackageReference "MarkdownText" */;
 			productName = MarkdownText;
+		};
+		C61F49C7294AFC690054AAF7 /* LDSwiftEventSource */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C61F49C6294AFC690054AAF7 /* XCRemoteSwiftPackageReference "swift-eventsource" */;
+			productName = LDSwiftEventSource;
 		};
 		C6F6CD4A294705740040B6AB /* SwiftyJSON */ = {
 			isa = XCSwiftPackageProductDependency;

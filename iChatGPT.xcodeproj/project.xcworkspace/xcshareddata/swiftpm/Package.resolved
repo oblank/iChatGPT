@@ -19,6 +19,15 @@
       }
     },
     {
+      "identity" : "swift-eventsource",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/launchdarkly/swift-eventsource",
+      "state" : {
+        "revision" : "aa03131eb30bbc35513153609ed65209853603a7",
+        "version" : "3.0.0"
+      }
+    },
+    {
       "identity" : "swift-markdown",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/shaps80/swift-markdown",

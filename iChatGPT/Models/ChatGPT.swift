@@ -8,9 +8,10 @@
 
 import Foundation
 import Combine
+import LDSwiftEventSource
 
 
-class Chatbot {
+class Chatbot: EventHandler {
 	
 	let apUrl = "https://chat.openai.com/"
 	let sessionTokenKey = "__Secure-next-auth.session-token"
@@ -24,6 +25,8 @@ class Chatbot {
 	var conversationId = ""
 	var parentId = ""
 	var userAvatarUrl = ""
+    
+    var chatConnector: EventSource? = nil
 	
 	init(sessionToken: String) {
 		self.sessionToken = sessionToken
@@ -121,13 +124,104 @@ class Chatbot {
 			print("刷新会话失败: <r>HTTP:\(error)")
 		}
 	}
+    
+    func onOpened() {
+        print("chatbot is conneting...")
+    }
+    
+    func onError(error: Error) {
+        print("chatbos is erroring", error)
+        chatConnector = nil
+    }
+    
+    func onMessage(eventType: String, messageEvent: MessageEvent) {
+        print("chatbot receiving", eventType, messageEvent)
+    }
+    
+    func onComment(comment: String) {
+        print("chatbot comment", comment)
+    }
+    
+    func onClosed() {
+        print("chatbot closed")
+        chatConnector = nil
+    }
+    
+    
+    struct ChatBody: Decodable {
+        var action: String = "next"
+        var messages: ChatBodyMessage
+        var parent_message_id: String
+        var model: String = "text-davinci-002-render"
+        var conversation_id: String? = ""
+    }
+    
+    struct ChatBodyMessage: Decodable {
+        var id: String = "\(UUID().uuidString)"
+        var role: String = "user"
+        var content: ChatBodyMessageContent
+    }
+    
+    struct ChatBodyMessageContent: Decodable {
+        var content_type: String = "text"
+        var parts: [String]
+    }
+    
+    
+    private func getPayloadForDecodable(prompt: String) -> Decodable {
+        let chatBody = ChatBody(
+            messages: ChatBodyMessage(content: ChatBodyMessageContent(parts: [prompt])),
+            parent_message_id: "\(self.parentId)",
+            conversation_id: self.conversationId.isEmpty ? nil : self.conversationId
+        )
+        return chatBody
+    }
+    
+    // 使用
+    func getChatResponseByEventSource(prompt: String) async -> String {
+        let urlStr = self.apUrl + "backend-api/conversation"
+        guard let url = URL(string: urlStr) else {
+            return ""
+        }
+        if chatConnector == nil {
+            chatConnector = EventSource(config: EventSource.Config(
+                handler: self,
+                url: url
+            ))
+        }
+        
+        var data: Data?
+        do {
+            print(getPayload(prompt: prompt))
+            data = try JSONSerialization.data(withJSONObject: getPayload(prompt: prompt))
+        } catch {
+            print("chatBody转换失败")
+        }
+        
+        var config = EventSource.Config(handler: self, url: url)
+//        config.urlSessionConfiguration = sessionWithMockProtocol()
+        config.method = "POST"
+        config.body = data
+        config.idleTimeout = 500.0
+//        config.lastEventId = "abc"
+        config.headers = headers()
+        let es = EventSource(config: config)
+        es.start()
+        chatConnector?.start()
+        
+        return ""
+    }
 	
     func getChatResponse(prompt: String, retry: Int = 1) async -> String {
         sessionToken = self.getCookies(key: sessionTokenKey)
         
-		if self.authorization.isEmpty {
-			await refreshSession()
-		}
+        if self.authorization.isEmpty {
+            await refreshSession()
+        }
+        
+        return await getChatResponseByEventSource(prompt: prompt)
+        
+
 		
 		let url = self.apUrl + "backend-api/conversation"
 		var request = URLRequest(url: URL(string: url)!)
